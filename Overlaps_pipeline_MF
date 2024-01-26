@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#This is my code to generate bedfiles to look for overlaps
+
+R CMD BATCH GFF_to_bed.R GFF_to_bed.Rout
+
+#This is my code to generate 1000 random sets of windows to overlap with the chemosensory gene sets.
+
+for i in $(seq 1 1 1000)
+do
+   R CMD BATCH Setup_Wstats_Overrep_ORsAndOBPs.R OverRepLog.Rout
+done
+
+mv *.sim sim_window_files
+
+cd sim_window_files
+cat *.sim > All_sims.txt
+cd ..
+
+#running Bedtools v.2.27.1 for overlaps
+
+touch olaps.txt
+
+for filename in ./sim_window_files/*.sim; do
+
+bedtools intersect -wo -a "$filename" -b gff_forJoin_chemo.bed >> olaps.txt
+bedtools intersect -wo -a "$filename" -b gff_forJoin_chemo.bed > temp_file
+awk '{print $2}' temp_file | sort -u | wc -l >> num_olaps.txt
+
+done
+
+R CMD BATCH Sim_freq_olaps.R Sim_freq_olaps.Rout
+
